@@ -216,6 +216,25 @@ class OrbitalGatewayTest < Test::Unit::TestCase
       assert_match(/<CustomerRefNum>ABC/, data)
     end.respond_with(successful_profile_response)
     assert_success response
+
+  def test_soft_descriptors
+    soft_descriptors = ActiveMerchant::Billing::OrbitalSoftDescriptors.new(
+      "000001",
+      "DBA",
+      :merchant_city       => "Timbuktu",
+      :merchant_phone      => "098-765-4321",
+      :product_description => "Weebles Wobble"
+    )
+    response = stub_comms do
+      @gateway.purchase(50, credit_card, :order_id => 1, :soft_descriptors => soft_descriptors)
+    end.check_request do |endpoint, data, headers|
+      assert_match(/<SDMerchantName>DBA/, data)
+      assert_match(/<SDMerchantCity>Timbuktu/, data)
+      assert_match(/<SDMerchantPhone>098\-765\-4321/, data)
+      assert_match(/<SDProductDescription>Weebles Wobble/, data)
+      assert_match(/<SDMerchantURL><\/SDMerchantURL>/, data)
+      assert_match(/<SDMerchantEmail><\/SDMerchantEmail>/, data)
+    end.respond_with(successful_purchase_response)
   end
 
   def test_attempts_seconday_url

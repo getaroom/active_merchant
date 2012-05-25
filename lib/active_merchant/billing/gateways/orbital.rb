@@ -33,7 +33,7 @@ module ActiveMerchant #:nodoc:
 
       POST_HEADERS = {
         "MIME-Version" => "1.0",
-        "Content-Type" => "Application/PTI46",
+        "Content-Type" => "Application/PTI54",
         "Content-transfer-encoding" => "text",
         "Request-number" => '1',
         "Document-type" => "Request",
@@ -269,6 +269,16 @@ module ActiveMerchant #:nodoc:
         xml.tag! :CurrencyExponent, '2' # Will need updating to support currencies such as the Yen.
       end
 
+      def add_avs_details(xml, address)
+        return unless AVS_SUPPORTED_COUNTRIES.include?(address[:country].to_s)
+
+        xml.tag! :AVSzip, address[:zip]
+        xml.tag! :AVSaddress1, address[:address1]
+        xml.tag! :AVSaddress2, address[:address2]
+        xml.tag! :AVScity, address[:city]
+        xml.tag! :AVSstate, address[:state]
+        xml.tag! :AVSphoneNum, address[:phone] ? address[:phone].scan(/\d/).join.to_s : nil
+      end
 
       def parse(body)
         response = {}
