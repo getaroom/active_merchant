@@ -216,6 +216,7 @@ class OrbitalGatewayTest < Test::Unit::TestCase
       assert_match(/<CustomerRefNum>ABC/, data)
     end.respond_with(successful_profile_response)
     assert_success response
+  end
 
   def test_soft_descriptors
     soft_descriptors = ActiveMerchant::Billing::OrbitalSoftDescriptors.new(
@@ -232,8 +233,6 @@ class OrbitalGatewayTest < Test::Unit::TestCase
       assert_match(/<SDMerchantCity>Timbuktu/, data)
       assert_match(/<SDMerchantPhone>098\-765\-4321/, data)
       assert_match(/<SDProductDescription>Weebles Wobble/, data)
-      assert_match(/<SDMerchantURL><\/SDMerchantURL>/, data)
-      assert_match(/<SDMerchantEmail><\/SDMerchantEmail>/, data)
     end.respond_with(successful_purchase_response)
   end
 
