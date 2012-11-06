@@ -6,10 +6,12 @@ module ActiveMerchant #:nodoc:
     # - does not support multiple subID per merchant
     # - language is fixed to 'nl'
     class IdealBaseGateway < Gateway
-      class_attribute :test_url, :live_url, :server_pem, :pem_password, :default_expiration_period
+      class_attribute :server_pem, :pem_password, :default_expiration_period
       self.default_expiration_period = 'PT10M'
       self.default_currency = 'EUR'
       self.pem_password = true
+
+      self.abstract_class = true
 
       # These constants will never change for most users
       AUTHENTICATION_TYPE = 'SHA1_RSA'
@@ -17,14 +19,10 @@ module ActiveMerchant #:nodoc:
       SUB_ID = '0'
       API_VERSION = '1.1.0'
 
-      attr_reader :url
-
       def initialize(options = {})
         requires!(options, :login, :password, :pem)
-        @options = options
 
-        @options[:pem_password] = options[:password]
-        @url = test? ? test_url : live_url
+        options[:pem_password] = options[:password]
         super
       end
 
@@ -47,11 +45,12 @@ module ActiveMerchant #:nodoc:
         commit(build_directory_request)
       end
 
-      def test?
-        @options[:test] || Base.gateway_mode == :test
+      private
+
+      def url
+        (test? ? test_url : live_url)
       end
 
-      private
       def token
         if @token.nil?
           @token = create_fingerprint(@options[:pem])

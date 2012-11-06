@@ -8,10 +8,12 @@ module ActiveMerchant #:nodoc:
       API_VERSION = 'xml-4.2'
       PERIODIC_API_VERSION = "spxml-4.2"
 
-      TEST_URL = 'https://transact.nab.com.au/test/xmlapi/payment'
-      LIVE_URL = 'https://transact.nab.com.au/live/xmlapi/payment'
-      TEST_PERIODIC_URL = "https://transact.nab.com.au/xmlapidemo/periodic"
-      LIVE_PERIODIC_URL = "https://transact.nab.com.au/xmlapi/periodic"
+      class_attribute :test_periodic_url, :live_periodic_url
+
+      self.test_url = 'https://transact.nab.com.au/test/xmlapi/payment'
+      self.live_url = 'https://transact.nab.com.au/live/xmlapi/payment'
+      self.test_periodic_url = 'https://transact.nab.com.au/xmlapidemo/periodic'
+      self.live_periodic_url = 'https://transact.nab.com.au/xmlapi/periodic'
 
       self.supported_countries = ['AU']
 
@@ -50,12 +52,7 @@ module ActiveMerchant #:nodoc:
 
       def initialize(options = {})
         requires!(options, :login, :password)
-        @options = options
         super
-      end
-
-      def test?
-        @options[:test] || super
       end
 
       def purchase(money, credit_card_or_stored_id, options = {})
@@ -81,6 +78,15 @@ module ActiveMerchant #:nodoc:
 
       private
 
+      def add_metadata(xml, options)
+        if options[:merchant_name] || options[:merchant_location]
+          xml.tag! 'metadata' do
+            xml.tag! 'meta', :name => 'ca_name', :value => options[:merchant_name] if options[:merchant_name]
+            xml.tag! 'meta', :name => 'ca_location', :value => options[:merchant_location] if options[:merchant_location]
+          end
+        end
+      end
+
       def build_purchase_request(money, credit_card, options)
         xml = Builder::XmlMarkup.new
         xml.tag! 'amount', amount(money)
@@ -92,6 +98,8 @@ module ActiveMerchant #:nodoc:
           xml.tag! 'expiryDate', expdate(credit_card)
           xml.tag! 'cvv', credit_card.verification_value if credit_card.verification_value?
         end
+
+        add_metadata(xml, options)
 
         xml.target!
       end
@@ -181,7 +189,7 @@ module ActiveMerchant #:nodoc:
       end
 
       def commit(action, request)
-        response = parse(ssl_post(test? ? TEST_URL : LIVE_URL, build_request(action, request)))
+        response = parse(ssl_post(test? ? self.test_url : self.live_url, build_request(action, request)))
 
         Response.new(success?(response), message_from(response), response,
           :test => test?,
@@ -190,7 +198,7 @@ module ActiveMerchant #:nodoc:
       end
 
       def commit_periodic(request)
-        response = parse(ssl_post(test? ? TEST_PERIODIC_URL : LIVE_PERIODIC_URL, build_periodic_request(request)))
+        response = parse(ssl_post(test? ? self.test_periodic_url : self.live_periodic_url, build_periodic_request(request)))
         Response.new(success?(response), message_from(response), response,
           :test => test?,
           :authorization => authorization_from(response)

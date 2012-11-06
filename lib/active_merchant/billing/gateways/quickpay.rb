@@ -4,7 +4,7 @@ require 'digest/md5'
 module ActiveMerchant #:nodoc:
   module Billing #:nodoc:
     class QuickpayGateway < Gateway
-      URL = 'https://secure.quickpay.dk/api'
+      self.live_url = self.test_url = 'https://secure.quickpay.dk/api'
 
       self.default_currency = 'DKK'
       self.money_format = :cents
@@ -93,7 +93,6 @@ module ActiveMerchant #:nodoc:
       def initialize(options = {})
         requires!(options, :login, :password)
         @protocol = options.delete(:version) || 3 # default to protocol version 3
-        @options = options
         super
       end
 
@@ -215,10 +214,10 @@ module ActiveMerchant #:nodoc:
       end
 
       def add_testmode(post)
-        return if post[:transaction].present? 
+        return if post[:transaction].present?
         post[:testmode] = test? ? '1' : '0'
       end
-      
+
       def add_fraud_parameters(post, options)
         if @protocol == 4
           post[:fraud_remote_addr] = options[:fraud_remote_addr] if options[:fraud_remote_addr]
@@ -232,7 +231,7 @@ module ActiveMerchant #:nodoc:
       end
 
       def commit(action, params)
-        response = parse(ssl_post(URL, post_data(action, params)))
+        response = parse(ssl_post(self.live_url, post_data(action, params)))
 
         Response.new(successful?(response), message_from(response), response,
           :test => test?,
