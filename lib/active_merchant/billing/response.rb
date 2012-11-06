@@ -4,7 +4,7 @@ module ActiveMerchant #:nodoc:
     end
 
     class Response
-      attr_reader :params, :message, :test, :authorization, :avs_result, :cvv_result
+      attr_reader :params, :message, :test, :authorization, :avs_result, :cvv_result, :options
 
       def success?
         @success
@@ -37,6 +37,7 @@ module ActiveMerchant #:nodoc:
           options[:cvv_result] || {}
         end
         @cvv_result = cvv_result_builder.to_hash
+        @options = options
       end
     end
 

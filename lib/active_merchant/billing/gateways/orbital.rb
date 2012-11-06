@@ -80,6 +80,8 @@ module ActiveMerchant #:nodoc:
         "EUR" => '978'
       }
 
+      attr_accessor :request_xml, :response_xml
+
       def initialize(options = {})
         requires!(options, :merchant_id)
         requires!(options, :login, :password) unless options[:ip_authentication]
@@ -133,7 +135,7 @@ module ActiveMerchant #:nodoc:
 
 
       # ==== Customer Profiles
-      # :customer_ref_num should be set unless your happy with Orbital providing one
+      # :customer_ref_num should be set unless you're happy with Orbital providing one
       #
       # :customer_profile_order_override_ind can be set to map
       # the CustomerRefNum to OrderID or Comments. Defaults to 'NO' - no mapping
@@ -303,21 +305,23 @@ module ActiveMerchant #:nodoc:
 
       def commit(order, message_type)
         headers = POST_HEADERS.merge("Content-length" => order.size.to_s)
-        request = lambda{|url| parse(ssl_post(url, order, headers))}
 
-        # Failover URL will be attempted in the event of a connection error
-        response = begin
-          request.call(remote_url)
+        # Failover URL will be used in the event of a connection error
+        response_xml = begin
+          ssl_post(remote_url, order, headers)
         rescue ConnectionError
-          request.call(remote_url(:secondary))
+          ssl_post(remote_url(:secondary), order, headers)
         end
 
+        response = parse(response_xml)
         Response.new(success?(response, message_type), message_from(response), response,
           {
              :authorization => authorization_string(response[:tx_ref_num], response[:order_id]),
-             :test => self.test?,
-             :avs_result => OrbitalGateway::AVSResult.new(response[:avs_resp_code]),
-             :cvv_result => response[:cvv2_resp_code]
+             :test          => self.test?,
+             :avs_result    => OrbitalGateway::AVSResult.new(response[:avs_resp_code]),
+             :cvv_result    => response[:cvv2_resp_code],
+             :request_xml   => order,
+             :response_xml  => response_xml
           }
         )
       end
