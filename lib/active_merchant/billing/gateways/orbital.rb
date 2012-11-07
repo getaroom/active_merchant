@@ -128,8 +128,8 @@ module ActiveMerchant #:nodoc:
       end
 
       # setting money to nil will perform a full void
-      def void(money, authorization, options = {})
-        order = build_void_request_xml(money, authorization, options)
+      def void(authorization, options = {})
+        order = build_void_request_xml(options[:money], authorization, options)
         commit(order, :void)
       end
 
