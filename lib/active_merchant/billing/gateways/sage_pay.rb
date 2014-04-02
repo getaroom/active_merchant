@@ -44,7 +44,7 @@ module ActiveMerchant #:nodoc:
       }
 
       self.supported_cardtypes = [:visa, :master, :american_express, :discover, :jcb, :switch, :solo, :maestro, :diners_club]
-      self.supported_countries = ['GB']
+      self.supported_countries = ['GB', 'IE']
       self.default_currency = 'GBP'
 
       self.homepage_url = 'http://www.sagepay.com'
@@ -65,6 +65,7 @@ module ActiveMerchant #:nodoc:
         add_credit_card(post, credit_card)
         add_address(post, options)
         add_customer_data(post, options)
+        add_optional_data(post, options)
 
         commit(:purchase, post)
       end
@@ -79,6 +80,7 @@ module ActiveMerchant #:nodoc:
         add_credit_card(post, credit_card)
         add_address(post, options)
         add_customer_data(post, options)
+        add_optional_data(post, options)
 
         commit(:authorization, post)
       end
@@ -156,6 +158,11 @@ module ActiveMerchant #:nodoc:
         add_pair(post, :ClientIPAddress, options[:ip])
       end
 
+      def add_optional_data(post, options)
+        add_pair(post, :GiftAidPayment, options[:gift_aid_payment]) unless options[:gift_aid_payment].blank?
+        add_pair(post, :Apply3DSecure, options[:apply_3d_secure]) unless options[:apply_3d_secure].blank?
+      end
+
       def add_address(post, options)
         if billing_address = options[:billing_address] || options[:address]
           first_name, last_name = parse_first_and_last_name(billing_address[:name])
@@ -184,7 +191,7 @@ module ActiveMerchant #:nodoc:
 
       def add_invoice(post, options)
         add_pair(post, :VendorTxCode, sanitize_order_id(options[:order_id]), :required => true)
-        add_pair(post, :Description, options[:description] || options[:order_id])
+        add_pair(post, :Description, truncate_description(options[:description] || options[:order_id]))
       end
 
       def add_credit_card(post, credit_card)
@@ -204,6 +211,11 @@ module ActiveMerchant #:nodoc:
 
       def sanitize_order_id(order_id)
         order_id.to_s.gsub(/[^-a-zA-Z0-9._]/, '')
+      end
+
+      def truncate_description(description)
+        return nil unless description
+        description[0, 100]
       end
 
       def map_card_type(credit_card)
@@ -280,6 +292,10 @@ module ActiveMerchant #:nodoc:
           :TxType => TRANSACTIONS[action],
           :VPSProtocol => "2.23"
         )
+
+        if(application_id && (application_id != Gateway.application_id))
+          parameters.update(:ReferrerID => application_id)
+        end
 
         parameters.collect { |key, value| "#{key}=#{CGI.escape(value.to_s)}" }.join("&")
       end

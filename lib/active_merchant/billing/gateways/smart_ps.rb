@@ -43,6 +43,7 @@ module ActiveMerchant #:nodoc:
         add_currency(post, money, options)
         add_taxes(post, options)
         add_processor(post, options)
+        add_eci(post, options)
         commit('sale', money, post)
       end
 
@@ -207,6 +208,10 @@ module ActiveMerchant #:nodoc:
         post[:transactionid] = auth
       end
 
+      def add_eci(post, options)
+        post[:billing_method] = options[:eci] if options[:eci]
+      end
+
       def parse(body)
         results = {}
         body.split(/&/).each do |pair|
@@ -221,7 +226,7 @@ module ActiveMerchant #:nodoc:
         parameters[:amount]  = amount(money) if money
         response = parse( ssl_post(self.live_url, post_data(action,parameters)) )
         Response.new(response["response"] == "1", message_from(response), response,
-          :authorization => response["transactionid"],
+          :authorization => (response["transactionid"] || response["customer_vault_id"]),
           :test => test?,
           :cvv_result => response["cvvresponse"],
           :avs_result => { :code => response["avsresponse"] }

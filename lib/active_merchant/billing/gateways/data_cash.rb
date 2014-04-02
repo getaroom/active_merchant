@@ -65,7 +65,7 @@ module ActiveMerchant
       #      See http://www.datacash.com/services/recurring/historic.php for more details of historic transactions.
       #   * <tt>:address</tt>:: billing address for card
       #
-      # The continuous authority reference will be available in response#params['ca_referece'] if you have requested one
+      # The continuous authority reference will be available in response#params['ca_reference'] if you have requested one
       def purchase(money, authorization_or_credit_card, options = {})
         requires!(options, :order_id)
 
@@ -93,7 +93,7 @@ module ActiveMerchant
       #      See http://www.datacash.com/services/recurring/historic.php for more details of historic transactions.
       #   * <tt>:address</tt>:: billing address for card
       #
-      # The continuous authority reference will be available in response#params['ca_referece'] if you have requested one
+      # The continuous authority reference will be available in response#params['ca_reference'] if you have requested one
       def authorize(money, authorization_or_credit_card, options = {})
         requires!(options, :order_id)
 
@@ -200,6 +200,7 @@ module ActiveMerchant
               xml.tag! :TxnDetails do
                 xml.tag! :merchantreference, format_reference_number(options[:order_id])
                 xml.tag! :amount, amount(money), :currency => options[:currency] || currency(money)
+                xml.tag! :capturemethod, 'ecomm'
               end
             end
           end
@@ -285,6 +286,7 @@ module ActiveMerchant
             xml.tag! :TxnDetails do
               xml.tag! :merchantreference, format_reference_number(options[:order_id])
               xml.tag! :amount, amount(money), :currency => options[:currency] || currency(money)
+              xml.tag! :capturemethod, 'ecomm'
             end
           end
         end
@@ -448,7 +450,7 @@ module ActiveMerchant
         end
       end
 
-      # Add credit_card detals to the passed XML Builder doc
+      # Add credit_card details to the passed XML Builder doc
       #
       # Parameters:
       #   -xml: Builder document that is being built up

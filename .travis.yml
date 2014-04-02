@@ -1,11 +1,11 @@
 rvm:
+  - 2.1.0
+  - 2.0.0
   - 1.9.3
   - 1.9.2
-  - 1.8.7
-  - ree
-  - rbx-18mode
 
 gemfile:
+  - Gemfile_rails40
   - Gemfile
   - Gemfile_rails31
   - Gemfile_rails30
@@ -17,3 +17,10 @@ notifications:
   email:
     - integrations-team@shopify.com
     - nathaniel@talbott.ws
+
+matrix:
+  exclude:
+    - rvm: 1.9.2
+      gemfile: Gemfile_rails40
+    - rvm: 2.1.0
+      gemfile: Gemfile_rails23

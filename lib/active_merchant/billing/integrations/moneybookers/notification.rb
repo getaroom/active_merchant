@@ -7,13 +7,7 @@ module ActiveMerchant #:nodoc:
       module Moneybookers
         class Notification < ActiveMerchant::Billing::Integrations::Notification
 
-          def initialize(data, options)
-            if options[:credential2].nil?
-              raise ArgumentError, "You need to provide the md5 secret as the option :credential2 to verify that the notification originated from Moneybookers"
-            end
-            super
-          end
-          
+
           def complete?
             status == 'Completed'
           end
@@ -118,8 +112,8 @@ module ActiveMerchant #:nodoc:
           #     else
           #       ... log possible hacking attempt ...
           #     end
-          def acknowledge
-            fields = [merchant_id, item_id, Digest::MD5.hexdigest(secret).upcase, merchant_amount, merchant_currency, status_code].join
+          def acknowledge(authcode = nil)
+            fields = [merchant_id, item_id, Digest::MD5.hexdigest(secret.to_s).upcase, merchant_amount, merchant_currency, status_code].join
             md5sig == Digest::MD5.hexdigest(fields).upcase
           end
         end

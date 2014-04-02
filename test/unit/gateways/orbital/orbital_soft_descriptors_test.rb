@@ -93,7 +93,7 @@ class OrbitalSoftDescriptorsTest < Test::Unit::TestCase
 
     soft_descriptors.merchant_email = "really@only13allowed.com"
     assert !soft_descriptors.valid?
-    assert soft_descriptors.errors[:merchant_email], ["is required to be 13 bytes or less"]
+    assert_equal soft_descriptors.errors[:merchant_email], ["is required to be 13 bytes or less"]
   end
 
   def test_merchant_url
@@ -103,8 +103,8 @@ class OrbitalSoftDescriptorsTest < Test::Unit::TestCase
     soft_descriptors.merchant_email = "www.cow.com"
     assert soft_descriptors.valid?
 
-    soft_descriptors.merchant_email = "www.only13allowed.com"
+    soft_descriptors.merchant_url = "www.only13allowed.com"
     assert !soft_descriptors.valid?
-    assert soft_descriptors.errors[:merchant_url], ["is required to be 13 bytes or less"]
+    assert_equal soft_descriptors.errors[:merchant_url], ["is required to be 13 bytes or less"]
   end
 end

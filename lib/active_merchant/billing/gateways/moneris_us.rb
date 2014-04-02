@@ -22,7 +22,7 @@ module ActiveMerchant #:nodoc:
       # password is your API Token
       def initialize(options = {})
         requires!(options, :login, :password)
-        @options = { :crypt_type => 7 }.update(options)
+        options = { :crypt_type => 7 }.merge(options)
         super
       end
 
@@ -111,7 +111,7 @@ module ActiveMerchant #:nodoc:
         }.merge(options)
       end
 
-      # Splits an +authorization+ param and retrives the order id and
+      # Splits an +authorization+ param and retrieves the order id and
       # transaction number in that order.
       def split_authorization(authorization)
         if authorization.nil? || authorization.empty? || authorization !~ /;/
