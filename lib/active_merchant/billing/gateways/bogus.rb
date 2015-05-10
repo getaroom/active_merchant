@@ -1,3 +1,6 @@
+require 'active_support'
+require 'json'
+
 module ActiveMerchant #:nodoc:
   module Billing #:nodoc:
     # Bogus Gateway
@@ -18,31 +21,62 @@ module ActiveMerchant #:nodoc:
       self.homepage_url = 'http://example.com'
       self.display_name = 'Bogus'
 
+      attr_accessor :last_request_body, :last_response_body, :last_exception
+
+      def reset_cached_last_info
+        @last_request_body , @last_response_body, @last_exception = [nil,nil,nil]
+      end
+
+      def initialize(options = {})
+        reset_cached_last_info
+        super
+      end
+
       def authorize(money, paysource, options = {})
-        money = amount(money)
-        case normalize(paysource)
-        when /1$/
-          Response.new(true, SUCCESS_MESSAGE, {:authorized_amount => money}, :test => true, :authorization => AUTHORIZATION )
-        when /2$/
-          Response.new(false, FAILURE_MESSAGE, {:authorized_amount => money, :error => FAILURE_MESSAGE }, :test => true)
-        else
-          raise Error, error_message(paysource)
+        reset_cached_last_info
+        begin
+          @last_request_body = build_last_request(:authorize, money, paysource, nil, options)
+
+          money = amount(money)
+          case normalize(paysource)
+          when /1$/
+            @last_response_body = Response.new(true, SUCCESS_MESSAGE, {:authorized_amount => money}, :test => true, :authorization => AUTHORIZATION )
+          when /2$/
+            @last_response_body = Response.new(false, FAILURE_MESSAGE, {:authorized_amount => money, :error => FAILURE_MESSAGE }, :test => true)
+          else
+            raise Error, error_message(paysource)
+          end
+        rescue => e
+          @last_exception = e
+          raise @last_exception
         end
+        @last_response_body
       end
 
       def purchase(money, paysource, options = {})
-        money = amount(money)
-        case normalize(paysource)
-        when /1$/, AUTHORIZATION
-          Response.new(true, SUCCESS_MESSAGE, {:paid_amount => money}, :test => true, :authorization => AUTHORIZATION)
-        when /2$/
-          Response.new(false, FAILURE_MESSAGE, {:paid_amount => money, :error => FAILURE_MESSAGE },:test => true)
-        else
-          raise Error, error_message(paysource)
+        reset_cached_last_info
+        begin
+          @last_request_body = build_last_request(:purchase, money, paysource, nil, options)
+
+          money = amount(money)
+          case normalize(paysource)
+          when /1$/, AUTHORIZATION
+            @last_response_body = Response.new(true, SUCCESS_MESSAGE, {:paid_amount => money}, :test => true, :authorization => AUTHORIZATION)
+          when /2$/
+            @last_response_body = Response.new(false, FAILURE_MESSAGE, {:paid_amount => money, :error => FAILURE_MESSAGE },:test => true)
+          else
+            raise Error, error_message(paysource)
+          end
+        rescue => e
+          @last_exception = e
+          raise @last_exception
         end
+        @last_response_body
       end
 
       def recurring(money, paysource, options = {})
+        reset_cached_last_info
+
         money = amount(money)
         case normalize(paysource)
         when /1$/
@@ -55,6 +89,8 @@ module ActiveMerchant #:nodoc:
       end
 
       def credit(money, paysource, options = {})
+        reset_cached_last_info
+
         if paysource.is_a?(String)
           deprecated CREDIT_DEPRECATION_MESSAGE
           return refund(money, paysource, options)
@@ -72,6 +108,8 @@ module ActiveMerchant #:nodoc:
       end
 
       def refund(money, reference, options = {})
+        reset_cached_last_info
+
         money = amount(money)
         case reference
         when /1$/
@@ -84,6 +122,8 @@ module ActiveMerchant #:nodoc:
       end
 
       def capture(money, reference, options = {})
+        reset_cached_last_info
+
         money = amount(money)
         case reference
         when /1$/
@@ -96,17 +136,30 @@ module ActiveMerchant #:nodoc:
       end
 
       def void(reference, options = {})
-        case reference
-        when /1$/
-          raise Error, VOID_ERROR_MESSAGE
-        when /2$/
-          Response.new(false, FAILURE_MESSAGE, {:authorization => reference, :error => FAILURE_MESSAGE }, :test => true)
-        else
-          Response.new(true, SUCCESS_MESSAGE, {:authorization => reference}, :test => true)
+        reset_cached_last_info
+
+        begin
+          @last_request_body = build_last_request(:void, nil, nil, reference, options)
+
+          case reference
+          when /1$/
+            @last_exception = { type: Error, message: VOID_ERROR_MESSAGE }
+            raise @last_exception[:type], @last_exception[:message]
+          when /2$/
+            @last_response_body = Response.new(false, FAILURE_MESSAGE, {:authorization => reference, :error => FAILURE_MESSAGE }, :test => true)
+          else
+            @last_response_body = Response.new(true, SUCCESS_MESSAGE, {:authorization => reference}, :test => true)
+          end
+        rescue => e
+          @last_exception = e
+          raise @last_exception
         end
+        @last_response_body
       end
 
       def store(paysource, options = {})
+        reset_cached_last_info
+
         case normalize(paysource)
         when /1$/
           Response.new(true, SUCCESS_MESSAGE, {:billingid => '1'}, :test => true, :authorization => AUTHORIZATION)
@@ -118,6 +171,8 @@ module ActiveMerchant #:nodoc:
       end
 
       def unstore(reference, options = {})
+        reset_cached_last_info
+
         case reference
         when /1$/
           Response.new(true, SUCCESS_MESSAGE, {}, :test => true)
@@ -147,6 +202,11 @@ module ActiveMerchant #:nodoc:
           ERROR_MESSAGE
         end
       end
+
+      def build_last_request(action, money = nil, paysource = nil, reference = nil, parameters = {})
+        JSON.parse({action: action, money: money, paysource: paysource, reference: reference, parameters: parameters}.to_json).to_xml(:indent => 2, :root => :Request)
+      end
+
     end
   end
 end

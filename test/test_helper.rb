@@ -228,6 +228,28 @@ Test::Unit::TestCase.class_eval do
   include ActiveMerchant::Assertions
   include ActiveMerchant::Utils
   include ActiveMerchant::Fixtures
+
+  def is_cached_last_info_success(response)
+    assert_success response
+    assert_instance_of(String, @gateway.last_request_body)
+    assert_instance_of(ActiveMerchant::Billing::Response, @gateway.last_response_body)
+    assert_nil(@gateway.last_exception)
+  end
+
+  def is_cached_last_info_failure(response)
+    assert_failure response
+    assert_instance_of(String, @gateway.last_request_body)
+    assert_instance_of(ActiveMerchant::Billing::Response, @gateway.last_response_body)
+    assert_nil(@gateway.last_exception)
+  end
+
+  def is_cached_last_info_error(response, expected_error_class)
+    assert_nil response
+    assert_instance_of(String, @gateway.last_request_body)
+    assert_nil(@gateway.last_response_body)
+    assert_instance_of(expected_error_class, @gateway.last_exception)
+  end
+
 end
 
 module ActionViewHelperTestHelper

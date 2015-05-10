@@ -491,6 +491,89 @@ class OrbitalGatewayTest < Test::Unit::TestCase
     assert_nil response.params['account_num']
   end
 
+  def test_authorize_cached_last_info_success
+    assert_nothing_raised do
+      @gateway.expects(:ssl_post).returns(successful_authorize_response)
+      response = @gateway.authorize(50, credit_card, :order_id => '1')
+      is_cached_last_info_success(response)
+    end
+  end
+
+  def test_authorize_cached_last_info_failure
+    assert_nothing_raised do
+      @gateway.expects(:ssl_post).returns(failed_authorize_response)
+      response = @gateway.authorize(50, credit_card, :order_id => '1')
+      is_cached_last_info_failure(response)
+    end
+  end
+
+  def test_authorize_cached_last_info_error
+    begin
+      response = @gateway.authorize(1000, credit_card('123'), :order_id => '1')
+    rescue => e
+    end
+    assert_not_nil(e)
+    is_cached_last_info_error(response, ActiveMerchant::ResponseError)
+  end
+
+  def test_purchase_cached_last_info_success
+    assert_nothing_raised do
+      @gateway.expects(:ssl_post).returns(successful_purchase_response)
+      response = @gateway.purchase(50, credit_card, :order_id => '1')
+      is_cached_last_info_success(response)
+    end
+  end
+
+  def test_purchase_cached_last_info_failure
+    assert_nothing_raised do
+      @gateway.expects(:ssl_post).returns(failed_purchase_response)
+      response = @gateway.purchase(50, credit_card, :order_id => '1')
+      is_cached_last_info_failure(response)
+    end
+  end
+
+  def test_purchase_cached_last_info_error
+    begin
+      response = @gateway.purchase(1000, credit_card('123'), :order_id => '1')
+    rescue => e
+    end
+    assert_not_nil(e)
+    is_cached_last_info_error(response, ActiveMerchant::ResponseError)
+  end
+
+  def test_void_cached_last_info_success
+    assert_nothing_raised do
+      @gateway.expects(:ssl_post).returns(successful_purchase_response)
+      response_purch = @gateway.purchase(50, credit_card, :order_id => '1')
+
+      @gateway.expects(:ssl_post).returns(successful_void_response)
+      response = @gateway.void(response_purch.authorization)
+      is_cached_last_info_success(response)
+    end
+  end
+
+  def test_void_cached_last_info_failure
+
+    assert_nothing_raised do
+      @gateway.expects(:ssl_post).returns(successful_purchase_response)
+      response_purch = @gateway.purchase(50, credit_card, :order_id => '1')
+
+      @gateway.expects(:ssl_post) # .returns(failed_void_response) # TODO: fix 'failed_void_response' or surrounding lines in 'test_void_cached_last_info_failure'
+      response = @gateway.void(response_purch.authorization, :order_id => '1')
+
+      is_cached_last_info_failure(response)
+    end
+  end
+
+  def test_void_cached_last_info_error
+    begin
+      response = @gateway.void('123')
+    rescue => e
+    end
+    assert_not_nil(e)
+    is_cached_last_info_error(response, ActiveMerchant::ResponseError)
+  end
+
   private
 
   def successful_purchase_response(resp_code = '00')
@@ -508,4 +591,17 @@ class OrbitalGatewayTest < Test::Unit::TestCase
   def successful_void_response
     %q{<?xml version="1.0" encoding="UTF-8"?><Response><ReversalResp><MerchantID>700000208761</MerchantID><TerminalID>001</TerminalID><OrderID>2</OrderID><TxRefNum>50FB1C41FEC9D016FF0BEBAD0884B174AD0853B0</TxRefNum><TxRefIdx>1</TxRefIdx><OutstandingAmt>0</OutstandingAmt><ProcStatus>0</ProcStatus><StatusMsg></StatusMsg><RespTime>01192013172049</RespTime></ReversalResp></Response>}
   end
+
+  def successful_authorize_response(resp_code = '00')
+    successful_purchase_response(resp_code)
+  end
+
+  def failed_authorize_response
+    failed_purchase_response
+  end
+
+  def failed_void_response
+    %q{<?xml version="1.0" encoding="UTF-8"?><Response><ReversalResp><MerchantID>700000000000</MerchantID><TerminalID>001</TerminalID><OrderID>1</OrderID><TxRefNum>50FB1C41FEC9D016FF0BEBAD0884B174AD0853B0</TxRefNum><TxRefIdx>1</TxRefIdx><OutstandingAmt>0</OutstandingAmt><ProcStatus>0</ProcStatus><ApprovalStatus>0</ApprovalStatus><RespCode>05</RespCode><AVSRespCode>G </AVSRespCode><CVV2RespCode>N</CVV2RespCode><AuthCode></AuthCode><RecurringAdviceCd></RecurringAdviceCd><CAVVRespCode></CAVVRespCode><StatusMsg>Do Not Honor</StatusMsg><RespMsg>AUTH DECLINED                   12001</RespMsg><HostRespCode>05</HostRespCode><HostAVSRespCode>N</HostAVSRespCode><HostCVV2RespCode>N</HostCVV2RespCode><RespTime>123456</RespTime></ReversalResp></Response>}
+  end
+
 end

@@ -1,3 +1,5 @@
+# require 'json'
+
 require File.dirname(__FILE__) + '/orbital/orbital_soft_descriptors'
 require File.dirname(__FILE__) + '/orbital/avs_result'
 require File.dirname(__FILE__) + '/orbital/cvv_result'
@@ -181,6 +183,12 @@ module ActiveMerchant #:nodoc:
 
       SENSITIVE_FIELDS = [:account_num]
 
+      attr_accessor :last_request_body, :last_response_body, :last_exception
+
+      def reset_cached_last_info
+        @last_request_body , @last_response_body, @last_exception = [nil,nil,nil]
+      end
+
       def initialize(options = {})
         requires!(options, :merchant_id)
         requires!(options, :login, :password) unless options[:ip_authentication]
@@ -189,28 +197,44 @@ module ActiveMerchant #:nodoc:
 
       # A – Authorization request
       def authorize(money, creditcard, options = {})
-        order = build_new_order_xml(AUTH_ONLY, money, options) do |xml|
-          add_creditcard(xml, creditcard, options[:currency])
-          add_address(xml, creditcard, options)
-          if @options[:customer_profiles]
-            add_customer_data(xml, options)
-            add_managed_billing(xml, options)
+        reset_cached_last_info
+
+        begin
+          @last_request_body = build_new_order_xml(AUTH_ONLY, money, options) do |xml|
+            add_creditcard(xml, creditcard, options[:currency])
+            add_address(xml, creditcard, options)
+            if @options[:customer_profiles]
+              add_customer_data(xml, options)
+              add_managed_billing(xml, options)
+            end
           end
+          @last_response_body = commit(@last_request_body, :authorize, options[:trace_number])
+        rescue => e
+          @last_exception = e
+          raise @last_exception
         end
-        commit(order, :authorize, options[:trace_number])
+        @last_response_body
       end
 
       # AC – Authorization and Capture
       def purchase(money, creditcard, options = {})
-        order = build_new_order_xml(AUTH_AND_CAPTURE, money, options) do |xml|
-          add_creditcard(xml, creditcard, options[:currency])
-          add_address(xml, creditcard, options)
-          if @options[:customer_profiles]
-            add_customer_data(xml, options)
-            add_managed_billing(xml, options)
+        reset_cached_last_info
+
+        begin
+          @last_request_body = build_new_order_xml(AUTH_AND_CAPTURE, money, options) do |xml|
+            add_creditcard(xml, creditcard, options[:currency])
+            add_address(xml, creditcard, options)
+            if @options[:customer_profiles]
+              add_customer_data(xml, options)
+              add_managed_billing(xml, options)
+            end
           end
+          @last_response_body = commit(@last_request_body, :purchase, options[:trace_number])
+        rescue => e
+          @last_exception = e
+          raise @last_exception
         end
-        commit(order, :purchase, options[:trace_number])
+        @last_response_body
       end
 
       # MFC - Mark For Capture
@@ -220,6 +244,8 @@ module ActiveMerchant #:nodoc:
 
       # R – Refund request
       def refund(money, authorization, options = {})
+        reset_cached_last_info
+
         order = build_new_order_xml(REFUND, money, options.merge(:authorization => authorization)) do |xml|
           add_refund(xml, options[:currency])
           xml.tag! :CustomerRefNum, options[:customer_ref_num] if @options[:customer_profiles] && options[:profile_txn]
@@ -228,18 +254,28 @@ module ActiveMerchant #:nodoc:
       end
 
       def credit(money, authorization, options= {})
+        reset_cached_last_info
+
         deprecated CREDIT_DEPRECATION_MESSAGE
         refund(money, authorization, options)
       end
 
       def void(authorization, options = {}, deprecated = {})
-        if(!options.kind_of?(Hash))
-          deprecated("Calling the void method with an amount parameter is deprecated and will be removed in a future version.")
-          return void(options, deprecated.merge(:amount => authorization))
-        end
+        reset_cached_last_info
 
-        order = build_void_request_xml(authorization, options)
-        commit(order, :void, options[:trace_number])
+        begin
+          if(!options.kind_of?(Hash))
+            deprecated("Calling the void method with an amount parameter is deprecated and will be removed in a future version.")
+            return void(options, deprecated.merge(:amount => authorization))
+          end
+
+          @last_request_body = build_void_request_xml(authorization, options)
+          @last_response_body = commit(@last_request_body, :void, options[:trace_number])
+        rescue => e
+          @last_exception = e
+          raise @last_exception
+        end
+        @last_response_body
       end
 
 
@@ -265,24 +301,32 @@ module ActiveMerchant #:nodoc:
       #   'MS'  - Manual Suspend
 
       def add_customer_profile(creditcard, options = {})
+        reset_cached_last_info
+
         options.merge!(:customer_profile_action => CREATE)
         order = build_customer_request_xml(creditcard, options)
         commit(order, :add_customer_profile)
       end
 
       def update_customer_profile(creditcard, options = {})
+        reset_cached_last_info
+
         options.merge!(:customer_profile_action => UPDATE)
         order = build_customer_request_xml(creditcard, options)
         commit(order, :update_customer_profile)
       end
 
       def retrieve_customer_profile(customer_ref_num)
+        reset_cached_last_info
+
         options = {:customer_profile_action => RETRIEVE, :customer_ref_num => customer_ref_num}
         order = build_customer_request_xml(nil, options)
         commit(order, :retrieve_customer_profile)
       end
 
       def delete_customer_profile(customer_ref_num)
+        reset_cached_last_info
+
         options = {:customer_profile_action => DELETE, :customer_ref_num => customer_ref_num}
         order = build_customer_request_xml(nil, options)
         commit(order, :delete_customer_profile)

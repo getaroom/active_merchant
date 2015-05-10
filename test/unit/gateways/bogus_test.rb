@@ -167,4 +167,74 @@ class BogusTest < Test::Unit::TestCase
     reference = @gateway.store(check(:account_number => CHECK_SUCCESS_PLACEHOLDER, :number => nil))
     assert @gateway.purchase(1000, reference.authorization).success?
   end
+
+  def test_authorize_cached_last_info_success
+    assert_nothing_raised do
+      response = @gateway.authorize(1000, credit_card(CC_SUCCESS_PLACEHOLDER))
+      is_cached_last_info_success(response)
+    end
+  end
+
+  def test_authorize_cached_last_info_failure
+    assert_nothing_raised do
+      response = @gateway.authorize(1000, credit_card(CC_FAILURE_PLACEHOLDER))
+      is_cached_last_info_failure(response)
+    end
+  end
+
+  def test_authorize_cached_last_info_error
+    begin
+      response = @gateway.authorize(1000, credit_card('123'))
+    rescue => e
+    end
+    assert_not_nil(e)
+    is_cached_last_info_error(response, ActiveMerchant::Billing::Error)
+  end
+
+  def test_purchase_cached_last_info_success
+    assert_nothing_raised do
+      response = @gateway.purchase(1000, credit_card(CC_SUCCESS_PLACEHOLDER))
+      is_cached_last_info_success(response)
+    end
+  end
+
+  def test_purchase_cached_last_info_failure
+    assert_nothing_raised do
+      response = @gateway.purchase(1000, credit_card(CC_FAILURE_PLACEHOLDER))
+      is_cached_last_info_failure(response)
+    end
+  end
+
+  def test_purchase_cached_last_info_error
+    begin
+      response = @gateway.purchase(1000, credit_card('123'))
+    rescue => e
+    end
+    assert_not_nil(e)
+    is_cached_last_info_error(response, ActiveMerchant::Billing::Error)
+  end
+
+  def test_void_cached_last_info_success
+    assert_nothing_raised do
+      response = @gateway.void('1337')
+      is_cached_last_info_success(response)
+    end
+  end
+
+  def test_void_cached_last_info_failure
+    assert_nothing_raised do
+      response = @gateway.void(CC_FAILURE_PLACEHOLDER)
+      is_cached_last_info_failure(response)
+    end
+  end
+
+  def test_void_cached_last_info_error
+    begin
+      response = @gateway.void(CC_SUCCESS_PLACEHOLDER)
+    rescue => e
+    end
+    assert_not_nil(e)
+    is_cached_last_info_error(response, ActiveMerchant::Billing::Error)
+  end
+
 end
