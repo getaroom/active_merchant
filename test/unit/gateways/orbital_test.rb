@@ -558,7 +558,7 @@ class OrbitalGatewayTest < Test::Unit::TestCase
       @gateway.expects(:ssl_post).returns(successful_purchase_response)
       response_purch = @gateway.purchase(50, credit_card, :order_id => '1')
 
-      @gateway.expects(:ssl_post) # .returns(failed_void_response) # TODO: fix 'failed_void_response' or surrounding lines in 'test_void_cached_last_info_failure'
+      @gateway.expects(:ssl_post)
       response = @gateway.void(response_purch.authorization, :order_id => '1')
 
       assert_last_gateway_call_failed(response)
@@ -598,10 +598,6 @@ class OrbitalGatewayTest < Test::Unit::TestCase
 
   def failed_authorize_response
     failed_purchase_response
-  end
-
-  def failed_void_response
-    %q{<?xml version="1.0" encoding="UTF-8"?><Response><ReversalResp><MerchantID>700000000000</MerchantID><TerminalID>001</TerminalID><OrderID>1</OrderID><TxRefNum>50FB1C41FEC9D016FF0BEBAD0884B174AD0853B0</TxRefNum><TxRefIdx>1</TxRefIdx><OutstandingAmt>0</OutstandingAmt><ProcStatus>0</ProcStatus><ApprovalStatus>0</ApprovalStatus><RespCode>05</RespCode><AVSRespCode>G </AVSRespCode><CVV2RespCode>N</CVV2RespCode><AuthCode></AuthCode><RecurringAdviceCd></RecurringAdviceCd><CAVVRespCode></CAVVRespCode><StatusMsg>Do Not Honor</StatusMsg><RespMsg>AUTH DECLINED                   12001</RespMsg><HostRespCode>05</HostRespCode><HostAVSRespCode>N</HostAVSRespCode><HostCVV2RespCode>N</HostCVV2RespCode><RespTime>123456</RespTime></ReversalResp></Response>}
   end
 
 end
