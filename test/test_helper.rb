@@ -229,21 +229,21 @@ Test::Unit::TestCase.class_eval do
   include ActiveMerchant::Utils
   include ActiveMerchant::Fixtures
 
-  def is_cached_last_info_success(response)
+  def assert_last_gateway_call_succeeded(response)
     assert_success response
     assert_instance_of(String, @gateway.last_request_body)
     assert_instance_of(ActiveMerchant::Billing::Response, @gateway.last_response_body)
     assert_nil(@gateway.last_exception)
   end
 
-  def is_cached_last_info_failure(response)
+  def assert_last_gateway_call_failed(response)
     assert_failure response
     assert_instance_of(String, @gateway.last_request_body)
     assert_instance_of(ActiveMerchant::Billing::Response, @gateway.last_response_body)
     assert_nil(@gateway.last_exception)
   end
 
-  def is_cached_last_info_error(response, expected_error_class)
+  def assert_last_gateway_call_errored(response, expected_error_class)
     assert_nil response
     assert_instance_of(String, @gateway.last_request_body)
     assert_nil(@gateway.last_response_body)

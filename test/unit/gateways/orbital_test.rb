@@ -495,7 +495,7 @@ class OrbitalGatewayTest < Test::Unit::TestCase
     assert_nothing_raised do
       @gateway.expects(:ssl_post).returns(successful_authorize_response)
       response = @gateway.authorize(50, credit_card, :order_id => '1')
-      is_cached_last_info_success(response)
+      assert_last_gateway_call_succeeded(response)
     end
   end
 
@@ -503,7 +503,7 @@ class OrbitalGatewayTest < Test::Unit::TestCase
     assert_nothing_raised do
       @gateway.expects(:ssl_post).returns(failed_authorize_response)
       response = @gateway.authorize(50, credit_card, :order_id => '1')
-      is_cached_last_info_failure(response)
+      assert_last_gateway_call_failed(response)
     end
   end
 
@@ -513,14 +513,14 @@ class OrbitalGatewayTest < Test::Unit::TestCase
     rescue => e
     end
     assert_not_nil(e)
-    is_cached_last_info_error(response, ActiveMerchant::ResponseError)
+    assert_last_gateway_call_errored(response, ActiveMerchant::ResponseError)
   end
 
   def test_purchase_cached_last_info_success
     assert_nothing_raised do
       @gateway.expects(:ssl_post).returns(successful_purchase_response)
       response = @gateway.purchase(50, credit_card, :order_id => '1')
-      is_cached_last_info_success(response)
+      assert_last_gateway_call_succeeded(response)
     end
   end
 
@@ -528,7 +528,7 @@ class OrbitalGatewayTest < Test::Unit::TestCase
     assert_nothing_raised do
       @gateway.expects(:ssl_post).returns(failed_purchase_response)
       response = @gateway.purchase(50, credit_card, :order_id => '1')
-      is_cached_last_info_failure(response)
+      assert_last_gateway_call_failed(response)
     end
   end
 
@@ -538,7 +538,7 @@ class OrbitalGatewayTest < Test::Unit::TestCase
     rescue => e
     end
     assert_not_nil(e)
-    is_cached_last_info_error(response, ActiveMerchant::ResponseError)
+    assert_last_gateway_call_errored(response, ActiveMerchant::ResponseError)
   end
 
   def test_void_cached_last_info_success
@@ -548,7 +548,7 @@ class OrbitalGatewayTest < Test::Unit::TestCase
 
       @gateway.expects(:ssl_post).returns(successful_void_response)
       response = @gateway.void(response_purch.authorization)
-      is_cached_last_info_success(response)
+      assert_last_gateway_call_succeeded(response)
     end
   end
 
@@ -561,7 +561,7 @@ class OrbitalGatewayTest < Test::Unit::TestCase
       @gateway.expects(:ssl_post) # .returns(failed_void_response) # TODO: fix 'failed_void_response' or surrounding lines in 'test_void_cached_last_info_failure'
       response = @gateway.void(response_purch.authorization, :order_id => '1')
 
-      is_cached_last_info_failure(response)
+      assert_last_gateway_call_failed(response)
     end
   end
 
@@ -571,7 +571,7 @@ class OrbitalGatewayTest < Test::Unit::TestCase
     rescue => e
     end
     assert_not_nil(e)
-    is_cached_last_info_error(response, ActiveMerchant::ResponseError)
+    assert_last_gateway_call_errored(response, ActiveMerchant::ResponseError)
   end
 
   private
