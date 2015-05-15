@@ -40,9 +40,9 @@ module ActiveMerchant #:nodoc:
           money = amount(money)
           case normalize(paysource)
           when /1$/
-            @last_response_body = Response.new(true, SUCCESS_MESSAGE, {:authorized_amount => money}, :test => true, :authorization => AUTHORIZATION )
+            @last_response_body = Response.new(true, SUCCESS_MESSAGE, {:authorized_amount => money}, { :test => true, :request_xml => '<foo/>', :response_xml  => '<quux/>', :authorization => AUTHORIZATION } )
           when /2$/
-            @last_response_body = Response.new(false, FAILURE_MESSAGE, {:authorized_amount => money, :error => FAILURE_MESSAGE }, :test => true)
+            @last_response_body = Response.new(false, FAILURE_MESSAGE, {:authorized_amount => money, :error => FAILURE_MESSAGE }, { :test => true, :request_xml => '<foo/>', :response_xml  => '<quux/>' } )
           else
             raise Error, error_message(paysource)
           end
@@ -61,9 +61,9 @@ module ActiveMerchant #:nodoc:
           money = amount(money)
           case normalize(paysource)
           when /1$/, AUTHORIZATION
-            @last_response_body = Response.new(true, SUCCESS_MESSAGE, {:paid_amount => money}, :test => true, :authorization => AUTHORIZATION)
+            @last_response_body = Response.new(true, SUCCESS_MESSAGE, {:paid_amount => money}, { :test => true, :request_xml => '<foo/>', :response_xml  => '<quux/>', :authorization => AUTHORIZATION } )
           when /2$/
-            @last_response_body = Response.new(false, FAILURE_MESSAGE, {:paid_amount => money, :error => FAILURE_MESSAGE },:test => true)
+            @last_response_body = Response.new(false, FAILURE_MESSAGE, {:paid_amount => money, :error => FAILURE_MESSAGE }, { :test => true, :request_xml => '<foo/>', :response_xml  => '<quux/>' } )
           else
             raise Error, error_message(paysource)
           end
@@ -146,9 +146,9 @@ module ActiveMerchant #:nodoc:
             @last_exception = { type: Error, message: VOID_ERROR_MESSAGE }
             raise @last_exception[:type], @last_exception[:message]
           when /2$/
-            @last_response_body = Response.new(false, FAILURE_MESSAGE, {:authorization => reference, :error => FAILURE_MESSAGE }, :test => true)
+            @last_response_body = Response.new(false, FAILURE_MESSAGE, {:authorization => reference, :error => FAILURE_MESSAGE }, { :test => true, :request_xml => '<foo/>', :response_xml  => '<quux/>' } )
           else
-            @last_response_body = Response.new(true, SUCCESS_MESSAGE, {:authorization => reference}, :test => true)
+            @last_response_body = Response.new(true, SUCCESS_MESSAGE, {:authorization => reference}, { :test => true, :request_xml => '<foo/>', :response_xml  => '<quux/>' } )
           end
         rescue => e
           @last_exception = e
