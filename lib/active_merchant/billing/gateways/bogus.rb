@@ -40,7 +40,7 @@ module ActiveMerchant #:nodoc:
         @last_method = __method__
 
         begin
-          @last_request_body = build_last_request(:authorize, money, paysource, nil, options)
+          @last_request_body = build_last_request(__method__, money, paysource, nil, options)
 
           money = amount(money)
           case normalize(paysource)
@@ -63,7 +63,7 @@ module ActiveMerchant #:nodoc:
         @last_method = __method__
 
         begin
-          @last_request_body = build_last_request(:purchase, money, paysource, nil, options)
+          @last_request_body = build_last_request(__method__, money, paysource, nil, options)
 
           money = amount(money)
           case normalize(paysource)
@@ -135,15 +135,23 @@ module ActiveMerchant #:nodoc:
         reset_cached_last_info
         @last_method = __method__
 
-        money = amount(money)
-        case reference
-        when /1$/
-          raise Error, CAPTURE_ERROR_MESSAGE
-        when /2$/
-          Response.new(false, FAILURE_MESSAGE, {:paid_amount => money, :error => FAILURE_MESSAGE }, :test => true)
-        else
-          Response.new(true, SUCCESS_MESSAGE, {:paid_amount => money}, :test => true)
+        begin
+          @last_request_body = build_last_request(__method__, money, nil, reference, options)
+
+          money = amount(money)
+          case reference
+            when /1$/
+              raise Error, CAPTURE_ERROR_MESSAGE
+            when /2$/
+              @last_response_body = Response.new(false, FAILURE_MESSAGE, {:paid_amount => money, :error => FAILURE_MESSAGE }, :test => true)
+            else
+              @last_response_body = Response.new(true, SUCCESS_MESSAGE, {:paid_amount => money}, :test => true)
+          end
+        rescue => e
+          @last_exception = e
+          raise @last_exception
         end
+        @last_response_body
       end
 
       def void(reference, options = {})
@@ -151,7 +159,7 @@ module ActiveMerchant #:nodoc:
         @last_method = __method__
 
         begin
-          @last_request_body = build_last_request(:void, nil, nil, reference, options)
+          @last_request_body = build_last_request(__method__, nil, nil, reference, options)
 
           case reference
           when /1$/
