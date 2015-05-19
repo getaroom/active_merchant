@@ -183,6 +183,7 @@ module ActiveMerchant #:nodoc:
 
       SENSITIVE_FIELDS = [:account_num]
 
+      attr_accessor :last_method
       attr_accessor :last_request_body, :last_response_body, :last_exception
 
       def reset_cached_last_info
@@ -198,6 +199,7 @@ module ActiveMerchant #:nodoc:
       # A – Authorization request
       def authorize(money, creditcard, options = {})
         reset_cached_last_info
+        @last_method = __method__
 
         begin
           @last_request_body = build_new_order_xml(AUTH_ONLY, money, options) do |xml|
@@ -219,6 +221,7 @@ module ActiveMerchant #:nodoc:
       # AC – Authorization and Capture
       def purchase(money, creditcard, options = {})
         reset_cached_last_info
+        @last_method = __method__
 
         begin
           @last_request_body = build_new_order_xml(AUTH_AND_CAPTURE, money, options) do |xml|
@@ -239,12 +242,16 @@ module ActiveMerchant #:nodoc:
 
       # MFC - Mark For Capture
       def capture(money, authorization, options = {})
+        reset_cached_last_info
+        @last_method = __method__
+
         commit(build_mark_for_capture_xml(money, authorization, options), :capture)
       end
 
       # R – Refund request
       def refund(money, authorization, options = {})
         reset_cached_last_info
+        @last_method = __method__
 
         order = build_new_order_xml(REFUND, money, options.merge(:authorization => authorization)) do |xml|
           add_refund(xml, options[:currency])
@@ -255,6 +262,7 @@ module ActiveMerchant #:nodoc:
 
       def credit(money, authorization, options= {})
         reset_cached_last_info
+        @last_method = __method__
 
         deprecated CREDIT_DEPRECATION_MESSAGE
         refund(money, authorization, options)
@@ -262,6 +270,7 @@ module ActiveMerchant #:nodoc:
 
       def void(authorization, options = {}, deprecated = {})
         reset_cached_last_info
+        @last_method = __method__
 
         begin
           if(!options.kind_of?(Hash))
@@ -302,6 +311,7 @@ module ActiveMerchant #:nodoc:
 
       def add_customer_profile(creditcard, options = {})
         reset_cached_last_info
+        @last_method = __method__
 
         options.merge!(:customer_profile_action => CREATE)
         order = build_customer_request_xml(creditcard, options)
@@ -310,6 +320,7 @@ module ActiveMerchant #:nodoc:
 
       def update_customer_profile(creditcard, options = {})
         reset_cached_last_info
+        @last_method = __method__
 
         options.merge!(:customer_profile_action => UPDATE)
         order = build_customer_request_xml(creditcard, options)
@@ -318,6 +329,7 @@ module ActiveMerchant #:nodoc:
 
       def retrieve_customer_profile(customer_ref_num)
         reset_cached_last_info
+        @last_method = __method__
 
         options = {:customer_profile_action => RETRIEVE, :customer_ref_num => customer_ref_num}
         order = build_customer_request_xml(nil, options)
@@ -326,6 +338,7 @@ module ActiveMerchant #:nodoc:
 
       def delete_customer_profile(customer_ref_num)
         reset_cached_last_info
+        @last_method = __method__
 
         options = {:customer_profile_action => DELETE, :customer_ref_num => customer_ref_num}
         order = build_customer_request_xml(nil, options)

@@ -21,6 +21,7 @@ module ActiveMerchant #:nodoc:
       self.homepage_url = 'http://example.com'
       self.display_name = 'Bogus'
 
+      attr_accessor :last_method
       attr_accessor :last_request_body, :last_response_body, :last_exception
 
       def reset_cached_last_info
@@ -29,11 +30,15 @@ module ActiveMerchant #:nodoc:
 
       def initialize(options = {})
         reset_cached_last_info
+        @last_method = __method__
+
         super
       end
 
       def authorize(money, paysource, options = {})
         reset_cached_last_info
+        @last_method = __method__
+
         begin
           @last_request_body = build_last_request(:authorize, money, paysource, nil, options)
 
@@ -55,6 +60,8 @@ module ActiveMerchant #:nodoc:
 
       def purchase(money, paysource, options = {})
         reset_cached_last_info
+        @last_method = __method__
+
         begin
           @last_request_body = build_last_request(:purchase, money, paysource, nil, options)
 
@@ -76,6 +83,7 @@ module ActiveMerchant #:nodoc:
 
       def recurring(money, paysource, options = {})
         reset_cached_last_info
+        @last_method = __method__
 
         money = amount(money)
         case normalize(paysource)
@@ -90,6 +98,7 @@ module ActiveMerchant #:nodoc:
 
       def credit(money, paysource, options = {})
         reset_cached_last_info
+        @last_method = __method__
 
         if paysource.is_a?(String)
           deprecated CREDIT_DEPRECATION_MESSAGE
@@ -109,6 +118,7 @@ module ActiveMerchant #:nodoc:
 
       def refund(money, reference, options = {})
         reset_cached_last_info
+        @last_method = __method__
 
         money = amount(money)
         case reference
@@ -123,6 +133,7 @@ module ActiveMerchant #:nodoc:
 
       def capture(money, reference, options = {})
         reset_cached_last_info
+        @last_method = __method__
 
         money = amount(money)
         case reference
@@ -137,14 +148,14 @@ module ActiveMerchant #:nodoc:
 
       def void(reference, options = {})
         reset_cached_last_info
+        @last_method = __method__
 
         begin
           @last_request_body = build_last_request(:void, nil, nil, reference, options)
 
           case reference
           when /1$/
-            @last_exception = { type: Error, message: VOID_ERROR_MESSAGE }
-            raise @last_exception[:type], @last_exception[:message]
+            raise Error, VOID_ERROR_MESSAGE
           when /2$/
             @last_response_body = Response.new(false, FAILURE_MESSAGE, {:authorization => reference, :error => FAILURE_MESSAGE }, { :test => true, :request_xml => '<foo/>', :response_xml  => '<quux/>' } )
           else
@@ -159,6 +170,7 @@ module ActiveMerchant #:nodoc:
 
       def store(paysource, options = {})
         reset_cached_last_info
+        @last_method = __method__
 
         case normalize(paysource)
         when /1$/
@@ -172,6 +184,7 @@ module ActiveMerchant #:nodoc:
 
       def unstore(reference, options = {})
         reset_cached_last_info
+        @last_method = __method__
 
         case reference
         when /1$/
