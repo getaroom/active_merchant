@@ -276,6 +276,10 @@ module ActiveMerchant #:nodoc:
         commit(order, :void, options[:retry_logic], options[:trace_number])
       end
 
+      def credit_refund(money, authorization, options={})
+        nil
+      end
+
       # ==== Customer Profiles
       # :customer_ref_num should be set unless you're happy with Orbital providing one
       #
